@@ -1,1 +1,1 @@
-Scrips to be added for peer-review
+Scripts to be added for peer-review
