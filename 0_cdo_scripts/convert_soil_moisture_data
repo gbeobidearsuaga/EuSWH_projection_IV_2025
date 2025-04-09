@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+#
+#SBATCH --job-name=tape_data
+#SBATCH --partition=compute
+#SBATCH --time=8:00:00
+#SBATCH --output=data_tape_comment_%j.log
+#SBATCH --error=data_tape_error_%j.log
+#SBATCH --mail-type=FAIL
+#SBATCH --account=uo1075
+module load cdo
+
+y0=1 #first ensemble member
+yn=50 #end ensemble member
+scenario=ssp585
+
+for ens_id in $(seq $y0 $yn); do
+    cdo mergetime /work/uo1075/u241308/SMILE/MIROC6/mrso/${scenario}/mrso_Lmon_MIROC6_${scenario}_r${ens_id}i1p1f1_gn_*.nc /work/uo1075/u241308/SMILE/MIROC6/mrso/${scenario}/joker_${scenario}_ens_${ens_id}.nc
+	cdo div /work/uo1075/u241308/SMILE/MIROC6/mrso/${scenario}/joker_${scenario}_ens_${ens_id}.nc /work/uo1075/u241308/SMILE/MIROC6/mrso/mrsofc_fx_MIROC6_land-hist-wfdei_r1i1p1f1_gn.nc /work/uo1075/u241308/SMILE/MIROC6/mrso/${scenario}/joker_${scenario}_ens_${ens_id}_soil_moisture_monthly.nc
+done
+
+cdo merge /work/uo1075/u241308/SMILE/MIROC6/mrso/${scenario}/joker_${scenario}_ens_*_soil_moisture_monthly.nc /work/uo1075/u241308/SMILE/MIROC6/mrso/MIROC6_soil_moisture_${scenario}_mm_ens1-50.nc
+
+cdo -remapbil,MPI_GE_grid_soil_moisture.txt /work/uo1075/u241308/SMILE/MIROC6/mrso/MIROC6_soil_moisture_${scenario}_mm_ens1-50.nc /work/uo1075/u241308/SMILE/MIROC6/mrso/MIROC6_soil_moisture_${scenario}_mm_ens1-50_GEgrid.nc
+
+rm /work/uo1075/u241308/SMILE/MIROC6/mrso/${scenario}/joker_${scenario}_*nc
+

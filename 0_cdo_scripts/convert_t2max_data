@@ -1,0 +1,25 @@
+#!/bin/bash
+#
+#
+#SBATCH --job-name=tape_data
+#SBATCH --partition=compute
+#SBATCH --time=8:00:00
+#SBATCH --output=data_tape_comment_%j.log
+#SBATCH --error=data_tape_error_%j.log
+#SBATCH --mail-type=FAIL
+#SBATCH --account=uo1075
+y0=1 #first ensemble member
+yn=50 #last ensemble member
+scenario=ssp585
+
+module load cdo
+for ens_id in $(seq $y0 $yn); do
+    cdo mergetime /work/uo1075/u241308/SMILE/MIROC6/tasmax/${scenario}/tasmax_day_MIROC6_${scenario}_r${ens_id}i1p1f1_gn_*.nc /work/uo1075/u241308/SMILE/MIROC6/tasmax/${scenario}/joker_${scenario}_ens_${ens_id}.nc
+	cdo daymax /work/uo1075/u241308/SMILE/MIROC6/tasmax/${scenario}/joker_${scenario}_ens_${ens_id}.nc /work/uo1075/u241308/SMILE/MIROC6/tasmax/${scenario}/joker_${scenario}_ens_${ens_id}_dm.nc
+done
+cdo merge /work/uo1075/u241308/SMILE/MIROC6/tasmax/${scenario}/joker_${scenario}_ens_*_dm.nc /work/uo1075/u241308/SMILE/MIROC6/tasmax/MIROC6_Tmax_${scenario}_dm_ens_1-50.nc
+rm /work/uo1075/u241308/SMILE/MIROC6/tasmax/${scenario}/joker_${scenario}_ens_*.nc
+
+cdo -remapbil,MPI_GE_grid_tasmax.txt /work/uo1075/u241308/SMILE/MIROC6/tasmax/MIROC6_Tmax_${scenario}_dm_ens_1-50.nc /work/uo1075/u241308/SMILE/MIROC6/tasmax/MIROC6_Tmax_${scenario}_dm_ens_1-50_GEgrid.nc
+
+cdo -O -s -sellonlatbox,350,30,35,70 /work/uo1075/u241308/SMILE/MIROC6/tasmax/MIROC6_Tmax_${scenario}_dm_ens_1-50_GEgrid.nc /work/uo1075/u241308/SMILE/MIROC6/tasmax/MIROC6_Tmax_${scenario}_dm_ens_1-50_GEgrid_europe.nc
